@@ -13,7 +13,8 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://catraca.visualsoftia.cloud'
+  'https://catracafront.visualsoftia.cloud',
+  'https://www.catratafront.visualsoftia.cloud'
 ];
 
 app.use(cors({
