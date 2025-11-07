@@ -11,21 +11,26 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',')
-  : ['http://localhost:5173', 'https://catraca.visualsoftia.cloud']; // adicione seus domínios
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://catraca.visualsoftia.cloud'
+];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Permite chamadas sem 'Origin' (como do backend ou Postman)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn('🚫 Bloqueado por CORS:', origin);
+      console.warn('🚫 CORS bloqueado para origem:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
 }));
+
 
 
 app.use(express.json());
