@@ -10,28 +10,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middlewares
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://catracafront.visualsoftia.cloud',
-  'https://www.catratafront.visualsoftia.cloud'
-];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permite chamadas sem 'Origin' (como do backend ou Postman)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn('🚫 CORS bloqueado para origem:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
+  origin: [
+    "https://catratafront.visualsoftia.cloud",
+    "https://www.catratafront.visualsoftia.cloud"
+  ],
+  credentials: true
 }));
-
 
 
 app.use(express.json());
