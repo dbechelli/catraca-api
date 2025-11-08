@@ -25,22 +25,25 @@ async function uploadRegistros(req, res) {
       return res.status(400).json({ error: 'Nenhum registro encontrado no arquivo' });
     }
     
-    // Iniciar transação
     await client.query('BEGIN');
     
-    // Inserir registros
     let inseridos = 0;
     
     for (const registro of registros) {
+      // 🔹 Garantir formato de data compatível com o PostgreSQL
+      const dataFormatada = registro.data 
+        ? new Date(registro.data).toISOString().split('T')[0] // yyyy-MM-dd
+        : null;
+      
       const query = `
         INSERT INTO registros_catraca 
         (nome, data, horario_entrada, horario_saida, minutos_total, catraca_id, grupo_horario, is_duplicado, arquivo_origem)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9)
       `;
       
       const values = [
         registro.nome,
-        registro.data,
+        dataFormatada,
         registro.horario_entrada,
         registro.horario_saida,
         registro.minutos_total,
@@ -54,7 +57,6 @@ async function uploadRegistros(req, res) {
       inseridos++;
     }
     
-    // Commit transação
     await client.query('COMMIT');
     
     res.status(201).json({
@@ -84,9 +86,9 @@ async function listarRegistros(req, res) {
   try {
     const { 
       nome, 
-      data,           // Data única (mantém compatibilidade) 
-      data_inicial,   // NOVO: Data inicial do período
-      data_final,     // NOVO: Data final do período
+      data,           
+      data_inicial,   
+      data_final,     
       catraca_id, 
       grupo_horario, 
       duplicados 
@@ -96,59 +98,50 @@ async function listarRegistros(req, res) {
     const values = [];
     let paramIndex = 1;
     
-    // Filtro por nome
     if (nome) {
       query += ` AND nome ILIKE $${paramIndex}`;
       values.push(`%${nome}%`);
       paramIndex++;
     }
+
+    // 🔹 Conversão segura para formato ISO (YYYY-MM-DD)
+    const parseDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+    const d = parseDate(data);
+    const dIni = parseDate(data_inicial);
+    const dFim = parseDate(data_final);
     
-    // Filtro de data - três possibilidades:
-    // 1. data única (compatibilidade)
-    // 2. período completo (data_inicial E data_final)
-    // 3. a partir de (apenas data_inicial)
-    // 4. até (apenas data_final)
-    
-    if (data) {
-      // Filtro por data única (mantém compatibilidade)
-      query += ` AND data = $${paramIndex}`;
-      values.push(data);
+    if (d) {
+      query += ` AND data = $${paramIndex}::date`;
+      values.push(d);
       paramIndex++;
     } else {
-      // Filtro por período
-      if (data_inicial && data_final) {
-        // Período completo: data >= data_inicial AND data <= data_final
-        query += ` AND data >= $${paramIndex} AND data <= $${paramIndex + 1}`;
-        values.push(data_inicial, data_final);
+      if (dIni && dFim) {
+        query += ` AND data BETWEEN $${paramIndex}::date AND $${paramIndex + 1}::date`;
+        values.push(dIni, dFim);
         paramIndex += 2;
-      } else if (data_inicial) {
-        // Apenas data inicial: data >= data_inicial
-        query += ` AND data >= $${paramIndex}`;
-        values.push(data_inicial);
+      } else if (dIni) {
+        query += ` AND data >= $${paramIndex}::date`;
+        values.push(dIni);
         paramIndex++;
-      } else if (data_final) {
-        // Apenas data final: data <= data_final
-        query += ` AND data <= $${paramIndex}`;
-        values.push(data_final);
+      } else if (dFim) {
+        query += ` AND data <= $${paramIndex}::date`;
+        values.push(dFim);
         paramIndex++;
       }
     }
-    
-    // Filtro por catraca
+
     if (catraca_id) {
       query += ` AND catraca_id = $${paramIndex}`;
       values.push(parseInt(catraca_id));
       paramIndex++;
     }
-    
-    // Filtro por grupo horário
+
     if (grupo_horario) {
       query += ` AND grupo_horario = $${paramIndex}`;
       values.push(grupo_horario);
       paramIndex++;
     }
-    
-    // Filtro por duplicados
+
     if (duplicados === 'true') {
       query += ' AND is_duplicado = true';
     } else if (duplicados === 'false') {
@@ -179,44 +172,43 @@ async function listarRegistros(req, res) {
  */
 async function obterIndicadores(req, res) {
   try {
-    const { 
-      data,           // Data única (mantém compatibilidade)
-      data_inicial,   // NOVO: Data inicial do período
-      data_final,     // NOVO: Data final do período
-      catraca_id 
-    } = req.query;
-    
+    const { data, data_inicial, data_final, catraca_id } = req.query;
+
+    const parseDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+    const d = parseDate(data);
+    const dIni = parseDate(data_inicial);
+    const dFim = parseDate(data_final);
+
     let whereClause = 'WHERE 1=1';
     const values = [];
     let paramIndex = 1;
-    
-    // Filtro de data - mesma lógica de listarRegistros
-    if (data) {
-      whereClause += ` AND data = $${paramIndex}`;
-      values.push(data);
+
+    if (d) {
+      whereClause += ` AND data = $${paramIndex}::date`;
+      values.push(d);
       paramIndex++;
     } else {
-      if (data_inicial && data_final) {
-        whereClause += ` AND data >= $${paramIndex} AND data <= $${paramIndex + 1}`;
-        values.push(data_inicial, data_final);
+      if (dIni && dFim) {
+        whereClause += ` AND data BETWEEN $${paramIndex}::date AND $${paramIndex + 1}::date`;
+        values.push(dIni, dFim);
         paramIndex += 2;
-      } else if (data_inicial) {
-        whereClause += ` AND data >= $${paramIndex}`;
-        values.push(data_inicial);
+      } else if (dIni) {
+        whereClause += ` AND data >= $${paramIndex}::date`;
+        values.push(dIni);
         paramIndex++;
-      } else if (data_final) {
-        whereClause += ` AND data <= $${paramIndex}`;
-        values.push(data_final);
+      } else if (dFim) {
+        whereClause += ` AND data <= $${paramIndex}::date`;
+        values.push(dFim);
         paramIndex++;
       }
     }
-    
+
     if (catraca_id) {
       whereClause += ` AND catraca_id = $${paramIndex}`;
       values.push(parseInt(catraca_id));
       paramIndex++;
     }
-    
+
     const query = `
       SELECT 
         grupo_horario,
@@ -236,8 +228,7 @@ async function obterIndicadores(req, res) {
     `;
     
     const result = await pool.query(query, values);
-    
-    // Formatar resposta
+
     const indicadores = {
       cafe: { total: 0, duplicados: 0, media_minutos: 0 },
       almoco: { total: 0, duplicados: 0, media_minutos: 0 },
@@ -253,7 +244,6 @@ async function obterIndicadores(req, res) {
       };
     });
     
-    // Total geral
     const totalQuery = `
       SELECT 
         COUNT(*) as total,
@@ -287,49 +277,48 @@ async function obterIndicadores(req, res) {
  */
 async function deletarRegistros(req, res) {
   try {
-    const { 
-      data,           // Data única
-      data_inicial,   // NOVO: Data inicial do período
-      data_final,     // NOVO: Data final do período
-      catraca_id 
-    } = req.query;
-    
-    if (!data && !data_inicial && !data_final && !catraca_id) {
+    const { data, data_inicial, data_final, catraca_id } = req.query;
+
+    const parseDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+    const d = parseDate(data);
+    const dIni = parseDate(data_inicial);
+    const dFim = parseDate(data_final);
+
+    if (!d && !dIni && !dFim && !catraca_id) {
       return res.status(400).json({ 
         error: 'Forneça ao menos um filtro (data, data_inicial, data_final ou catraca_id) para deletar' 
       });
     }
-    
+
     let query = 'DELETE FROM registros_catraca WHERE 1=1';
     const values = [];
     let paramIndex = 1;
-    
-    // Filtro de data - mesma lógica
-    if (data) {
-      query += ` AND data = $${paramIndex}`;
-      values.push(data);
+
+    if (d) {
+      query += ` AND data = $${paramIndex}::date`;
+      values.push(d);
       paramIndex++;
     } else {
-      if (data_inicial && data_final) {
-        query += ` AND data >= $${paramIndex} AND data <= $${paramIndex + 1}`;
-        values.push(data_inicial, data_final);
+      if (dIni && dFim) {
+        query += ` AND data BETWEEN $${paramIndex}::date AND $${paramIndex + 1}::date`;
+        values.push(dIni, dFim);
         paramIndex += 2;
-      } else if (data_inicial) {
-        query += ` AND data >= $${paramIndex}`;
-        values.push(data_inicial);
+      } else if (dIni) {
+        query += ` AND data >= $${paramIndex}::date`;
+        values.push(dIni);
         paramIndex++;
-      } else if (data_final) {
-        query += ` AND data <= $${paramIndex}`;
-        values.push(data_final);
+      } else if (dFim) {
+        query += ` AND data <= $${paramIndex}::date`;
+        values.push(dFim);
         paramIndex++;
       }
     }
-    
+
     if (catraca_id) {
       query += ` AND catraca_id = $${paramIndex}`;
       values.push(parseInt(catraca_id));
     }
-    
+
     const result = await pool.query(query, values);
     
     res.json({
