@@ -78,41 +78,77 @@ async function uploadRegistros(req, res) {
 }
 
 /**
- * Listar registros com filtros
+ * Listar registros com filtros (incluindo período de datas)
  */
 async function listarRegistros(req, res) {
   try {
-    const { nome, data, catraca_id, grupo_horario, duplicados } = req.query;
+    const { 
+      nome, 
+      data,           // Data única (mantém compatibilidade) 
+      data_inicial,   // NOVO: Data inicial do período
+      data_final,     // NOVO: Data final do período
+      catraca_id, 
+      grupo_horario, 
+      duplicados 
+    } = req.query;
     
     let query = 'SELECT * FROM registros_catraca WHERE 1=1';
     const values = [];
     let paramIndex = 1;
     
-    // Filtros
+    // Filtro por nome
     if (nome) {
       query += ` AND nome ILIKE $${paramIndex}`;
       values.push(`%${nome}%`);
       paramIndex++;
     }
     
+    // Filtro de data - três possibilidades:
+    // 1. data única (compatibilidade)
+    // 2. período completo (data_inicial E data_final)
+    // 3. a partir de (apenas data_inicial)
+    // 4. até (apenas data_final)
+    
     if (data) {
+      // Filtro por data única (mantém compatibilidade)
       query += ` AND data = $${paramIndex}`;
       values.push(data);
       paramIndex++;
+    } else {
+      // Filtro por período
+      if (data_inicial && data_final) {
+        // Período completo: data >= data_inicial AND data <= data_final
+        query += ` AND data >= $${paramIndex} AND data <= $${paramIndex + 1}`;
+        values.push(data_inicial, data_final);
+        paramIndex += 2;
+      } else if (data_inicial) {
+        // Apenas data inicial: data >= data_inicial
+        query += ` AND data >= $${paramIndex}`;
+        values.push(data_inicial);
+        paramIndex++;
+      } else if (data_final) {
+        // Apenas data final: data <= data_final
+        query += ` AND data <= $${paramIndex}`;
+        values.push(data_final);
+        paramIndex++;
+      }
     }
     
+    // Filtro por catraca
     if (catraca_id) {
       query += ` AND catraca_id = $${paramIndex}`;
       values.push(parseInt(catraca_id));
       paramIndex++;
     }
     
+    // Filtro por grupo horário
     if (grupo_horario) {
       query += ` AND grupo_horario = $${paramIndex}`;
       values.push(grupo_horario);
       paramIndex++;
     }
     
+    // Filtro por duplicados
     if (duplicados === 'true') {
       query += ' AND is_duplicado = true';
     } else if (duplicados === 'false') {
@@ -139,20 +175,40 @@ async function listarRegistros(req, res) {
 }
 
 /**
- * Obter indicadores por grupo de horário
+ * Obter indicadores por grupo de horário (com suporte a período)
  */
 async function obterIndicadores(req, res) {
   try {
-    const { data, catraca_id } = req.query;
+    const { 
+      data,           // Data única (mantém compatibilidade)
+      data_inicial,   // NOVO: Data inicial do período
+      data_final,     // NOVO: Data final do período
+      catraca_id 
+    } = req.query;
     
     let whereClause = 'WHERE 1=1';
     const values = [];
     let paramIndex = 1;
     
+    // Filtro de data - mesma lógica de listarRegistros
     if (data) {
       whereClause += ` AND data = $${paramIndex}`;
       values.push(data);
       paramIndex++;
+    } else {
+      if (data_inicial && data_final) {
+        whereClause += ` AND data >= $${paramIndex} AND data <= $${paramIndex + 1}`;
+        values.push(data_inicial, data_final);
+        paramIndex += 2;
+      } else if (data_inicial) {
+        whereClause += ` AND data >= $${paramIndex}`;
+        values.push(data_inicial);
+        paramIndex++;
+      } else if (data_final) {
+        whereClause += ` AND data <= $${paramIndex}`;
+        values.push(data_final);
+        paramIndex++;
+      }
     }
     
     if (catraca_id) {
@@ -227,15 +283,20 @@ async function obterIndicadores(req, res) {
 }
 
 /**
- * Deletar registros (limpar banco)
+ * Deletar registros (limpar banco) - com suporte a período
  */
 async function deletarRegistros(req, res) {
   try {
-    const { data, catraca_id } = req.query;
+    const { 
+      data,           // Data única
+      data_inicial,   // NOVO: Data inicial do período
+      data_final,     // NOVO: Data final do período
+      catraca_id 
+    } = req.query;
     
-    if (!data && !catraca_id) {
+    if (!data && !data_inicial && !data_final && !catraca_id) {
       return res.status(400).json({ 
-        error: 'Forneça ao menos um filtro (data ou catraca_id) para deletar' 
+        error: 'Forneça ao menos um filtro (data, data_inicial, data_final ou catraca_id) para deletar' 
       });
     }
     
@@ -243,10 +304,25 @@ async function deletarRegistros(req, res) {
     const values = [];
     let paramIndex = 1;
     
+    // Filtro de data - mesma lógica
     if (data) {
       query += ` AND data = $${paramIndex}`;
       values.push(data);
       paramIndex++;
+    } else {
+      if (data_inicial && data_final) {
+        query += ` AND data >= $${paramIndex} AND data <= $${paramIndex + 1}`;
+        values.push(data_inicial, data_final);
+        paramIndex += 2;
+      } else if (data_inicial) {
+        query += ` AND data >= $${paramIndex}`;
+        values.push(data_inicial);
+        paramIndex++;
+      } else if (data_final) {
+        query += ` AND data <= $${paramIndex}`;
+        values.push(data_final);
+        paramIndex++;
+      }
     }
     
     if (catraca_id) {
