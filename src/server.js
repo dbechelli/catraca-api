@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors({
   origin: [
-    "http://http://localhost:5173/",
+    "http://localhost:5173",
     "https://catratafront.visualsoftia.cloud",
     "https://www.catratafront.visualsoftia.cloud"
   ],
