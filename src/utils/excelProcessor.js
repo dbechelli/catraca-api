@@ -13,10 +13,10 @@ function identificarGrupoHorario(hora) {
   if (minutosDoDia < 10 * 60 + 40) return 'cafe';
   
   // Almoço: 10:40 até 13:59
-  if (minutosDoDia >= 10 * 60 + 40 && minutosDoDia < 14 * 60) return 'almoco';
+  if (minutosDoDia >= 10 * 60 + 40 && minutosDoDia < 17 * 60 + 50) return 'almoco';
   
   // Janta: a partir das 18:00
-  if (minutosDoDia >= 18 * 60) return 'janta';
+  if (minutosDoDia >= 18 * 60 && minutosDoDia < 24 * 60) return 'janta';
   
   return 'outro';
 }
