@@ -1,23 +1,29 @@
 const XLSX = require('xlsx');
-
 /**
  * Identifica o grupo de horário baseado na hora
  */
 function identificarGrupoHorario(hora) {
   if (!hora) return null;
-  
+
   const [h, m] = hora.split(':').map(Number);
   const minutosDoDia = h * 60 + m;
-  
-  // Café: até 10:39
-  if (minutosDoDia < 10 * 60 + 40) return 'cafe';
-  
-  // Almoço: 10:40 até 13:59
-  if (minutosDoDia >= 10 * 60 + 40 && minutosDoDia < 17 * 60 + 50) return 'almoco';
-  
-  // Janta: a partir das 18:00
-  if (minutosDoDia >= 18 * 60 && minutosDoDia < 24 * 60) return 'janta';
-  
+
+  // Café: 05:00 até 10:00
+  if (minutosDoDia >= 5 * 60 && minutosDoDia < 10 * 60) {
+    return 'cafe';
+  }
+
+  // Almoço: 10:00 até 15:00
+  if (minutosDoDia >= 10 * 60 && minutosDoDia < 15 * 60) {
+    return 'almoco';
+  }
+
+  // Janta: 17:00 até 00:00
+  if (minutosDoDia >= 17 * 60 && minutosDoDia < 24 * 60) {
+    return 'janta';
+  }
+
+  // Tudo fora dessas faixas vai como "outro"
   return 'outro';
 }
 
