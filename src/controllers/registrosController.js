@@ -210,22 +210,26 @@ async function obterIndicadores(req, res) {
     }
 
     const query = `
-      SELECT 
-        grupo_horario,
-        COUNT(*) as total,
-        COUNT(CASE WHEN is_duplicado = true THEN 1 END) as duplicados,
-        AVG(minutos_total) as media_minutos
-      FROM registros_catraca
-      ${whereClause}
-      GROUP BY grupo_horario
-      ORDER BY 
-        CASE grupo_horario 
-          WHEN 'cafe' THEN 1 
-          WHEN 'almoco' THEN 2 
-          WHEN 'janta' THEN 3 
-          ELSE 4 
-        END
-    `;
+  SELECT 
+    grupo_horario,
+    COUNT(*) FILTER (WHERE horario_entrada IS NOT NULL) AS entradas,
+    COUNT(*) FILTER (WHERE horario_saida   IS NOT NULL) AS saidas,
+    COUNT(*) FILTER (WHERE horario_entrada IS NOT NULL AND horario_saida IS NOT NULL) AS completos,
+    COUNT(*) FILTER (WHERE horario_entrada IS NOT NULL AND horario_saida IS NULL) AS semSaida,
+    COUNT(*) FILTER (WHERE horario_entrada IS NULL AND horario_saida IS NOT NULL) AS semEntrada,
+    COUNT(*) FILTER (WHERE is_duplicado = true) AS duplicados,
+    AVG(minutos_total) AS media_minutos
+  FROM registros_catraca
+  ${whereClause}
+  GROUP BY grupo_horario
+  ORDER BY 
+    CASE grupo_horario 
+      WHEN 'cafe' THEN 1 
+      WHEN 'almoco' THEN 2 
+      WHEN 'janta' THEN 3 
+      ELSE 4 
+    END
+`;
     
     const result = await pool.query(query, values);
 
@@ -238,8 +242,12 @@ async function obterIndicadores(req, res) {
     
     result.rows.forEach(row => {
       indicadores[row.grupo_horario] = {
-        total: parseInt(row.total),
-        duplicados: parseInt(row.duplicados),
+        entradas: parseInt(row.entradas || 0),
+        saidas: parseInt(row.saidas || 0),
+        completos: parseInt(row.completos || 0),
+        semSaida: parseInt(row.semsaida || 0),
+        semEntrada: parseInt(row.sementrada || 0),
+        duplicados: parseInt(row.duplicados || 0),
         media_minutos: parseFloat(row.media_minutos || 0).toFixed(0)
       };
     });
