@@ -115,63 +115,68 @@ async function uploadRegistros(req, res) {
 }
 
 /**
- * Listar registros com filtros
+ * Listar registros com filtros (incluindo período de datas)
  */
 async function listarRegistros(req, res) {
   try {
-    const { nome, data, catraca_id, grupo_horario, duplicados } = req.query;
+    const { 
+      nome, 
+      data,           
+      data_inicial,   
+      data_final,
+      grupo_horario, 
+      duplicados 
+    } = req.query;
     
-    let whereClause = 'WHERE 1=1';
+    let query = 'SELECT * FROM registros_catraca WHERE 1=1';
     const values = [];
     let paramIndex = 1;
     
     if (nome) {
-      whereClause += ` AND LOWER(nome) LIKE LOWER($${paramIndex})`;
+      query += ` AND nome ILIKE $${paramIndex}`;
       values.push(`%${nome}%`);
       paramIndex++;
     }
+
+    // 🔹 Conversão segura para formato ISO (YYYY-MM-DD)
+    const parseDate = (d) => d ? new Date(d).toISOString().split('T')[0] : null;
+    const d = parseDate(data);
+    const dIni = parseDate(data_inicial);
+    const dFim = parseDate(data_final);
     
-    if (data) {
-      whereClause += ` AND data = $${paramIndex}`;
-      values.push(data);
+    if (d) {
+      query += ` AND data = $${paramIndex}::date`;
+      values.push(d);
       paramIndex++;
+    } else {
+      if (dIni && dFim) {
+        query += ` AND data BETWEEN $${paramIndex}::date AND $${paramIndex + 1}::date`;
+        values.push(dIni, dFim);
+        paramIndex += 2;
+      } else if (dIni) {
+        query += ` AND data >= $${paramIndex}::date`;
+        values.push(dIni);
+        paramIndex++;
+      } else if (dFim) {
+        query += ` AND data <= $${paramIndex}::date`;
+        values.push(dFim);
+        paramIndex++;
+      }
     }
-    
-    if (catraca_id) {
-      whereClause += ` AND (catraca_entrada = $${paramIndex} OR catraca_saida = $${paramIndex})`;
-      values.push(parseInt(catraca_id));
-      paramIndex++;
-    }
-    
+
     if (grupo_horario) {
-      whereClause += ` AND grupo_horario = $${paramIndex}`;
+      query += ` AND grupo_horario = $${paramIndex}`;
       values.push(grupo_horario);
       paramIndex++;
     }
-    
+
     if (duplicados === 'true') {
-      whereClause += ' AND is_duplicado = true';
+      query += ' AND is_duplicado = true';
+    } else if (duplicados === 'false') {
+      query += ' AND is_duplicado = false';
     }
     
-    const query = `
-      SELECT 
-        id,
-        nome,
-        TO_CHAR(data, 'YYYY-MM-DD') as data,
-        horario_entrada,
-        horario_saida,
-        minutos_total,
-        catraca_entrada,
-        catraca_saida,
-        grupo_horario,
-        is_duplicado,
-        arquivo_origem,
-        observacoes,
-        created_at
-      FROM registros_catraca
-      ${whereClause}
-      ORDER BY data DESC, nome ASC, horario_entrada ASC
-    `;
+    query += ' ORDER BY data DESC, horario_entrada DESC';
     
     const result = await pool.query(query, values);
     
