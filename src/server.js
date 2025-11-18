@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const pool = require('./config/database');
-const registrosRoutes = require('./routes/registros');
+//const registrosRoutes = require('./routes/registros');
+const registrosRoutes = require('./routes/registrosRoutes');
+   
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -62,6 +64,7 @@ app.get('/health', async (req, res) => {
 });
 
 // Rotas principais
+//app.use('/api/registros', registrosRoutes);
 app.use('/api/registros', registrosRoutes);
 
 // Error handling middleware
