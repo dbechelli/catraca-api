@@ -7,7 +7,8 @@ const {
   listarRegistros,
   obterIndicadores,
   obterEstatisticas,
-  deletarRegistros
+  deletarRegistros,
+  conferenciaICMS
 } = require('../controllers/registrosControllerConsolidado');
 
 // Configuração do Multer para upload de arquivos
