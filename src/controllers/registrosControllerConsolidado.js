@@ -385,11 +385,44 @@ async function deletarRegistros(req, res) {
   }
 }
 
+async function conferenciaICMS(req, res) {
+  try {
+    const { tomador, data_inicio, data_fim } = req.query;
+
+    const query = `
+      SELECT *
+      FROM fn_conferencia_icms_cte($1, $2, $3)
+    `;
+
+    const result = await pool.query(query, [
+      tomador || null,
+      data_inicio || null,
+      data_fim || null
+    ]);
+
+    res.json({
+      success: true,
+      total: result.rows.length,
+      dados: result.rows
+    });
+
+  } catch (error) {
+    console.error('Erro na conferência ICMS:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erro ao executar conferência de ICMS',
+      details: error.message
+    });
+  }
+}
+
+
 module.exports = {
   uploadRegistros,
   uploadConsolidado,
   listarRegistros,
   obterIndicadores,
   obterEstatisticas,
-  deletarRegistros
+  deletarRegistros,
+  conferenciaICMS
 };

@@ -64,4 +64,7 @@ router.get('/estatisticas', obterEstatisticas);
 // Deletar registros
 router.delete('/', deletarRegistros);
 
+// Conferencia ICMS CTE
+router.get('/conferencia-icms-cte', conferenciaICMS);
+
 module.exports = router;
