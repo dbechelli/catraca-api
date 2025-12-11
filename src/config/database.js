@@ -9,9 +9,11 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   // SSL configurável via variável de ambiente
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  max: 20,
+  max: 10,
+  min: 2,
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000,
+  statement_timeout: 30000,
 });
 
 // Testar conexão
