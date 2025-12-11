@@ -1,7 +1,7 @@
 // controllers/authController.js
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const pool = require('../config/database');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -34,7 +34,7 @@ async function login(req, res) {
     }
 
     // gerar novo jti
-    const jti = uuidv4();
+    const jti = randomUUID();
     const jtiExpiresAt = new Date(Date.now() + 10 * 3600 * 1000); // 10 horas
 
     const payload = {
