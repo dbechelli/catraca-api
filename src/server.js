@@ -6,6 +6,7 @@ const pool = require('./config/database');
 const registrosRoutes = require('./routes/registrosRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const permissionsRoutes = require('./routes/permissionsRoutes');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -70,6 +71,9 @@ app.use('/api/auth', authRoutes);
 
 // Rotas administrativas
 app.use('/api/admin', adminRoutes);
+
+// Rotas de permissões
+app.use('/api/permissions', permissionsRoutes);
 
 // Rotas principais
 app.use('/api/registros', registrosRoutes);
