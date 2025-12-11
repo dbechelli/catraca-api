@@ -40,11 +40,31 @@ app.get('/', (req, res) => {
     message: '🍽️ API Sistema de Controle de Catracas',
     version: '1.0.0',
     endpoints: {
-      upload: 'POST /api/registros/upload',
-      listar: 'GET /api/registros',
-      indicadores: 'GET /api/registros/indicadores',
-      estatisticas: 'GET /api/registros/estatisticas',
-      deletar: 'DELETE /api/registros'
+      auth: {
+        login: 'POST /api/auth/login',
+        logout: 'POST /api/auth/logout'
+      },
+      registros: {
+        upload: 'POST /api/registros/upload',
+        listar: 'GET /api/registros',
+        indicadores: 'GET /api/registros/indicadores',
+        estatisticas: 'GET /api/registros/estatisticas',
+        deletar: 'DELETE /api/registros'
+      },
+      admin: {
+        listUsuarios: 'GET /api/admin/users',
+        criarUsuario: 'POST /api/admin/users',
+        atualizarUsuario: 'PUT /api/admin/users/:id',
+        deletarUsuario: 'DELETE /api/admin/users/:id'
+      },
+      permissoes: {
+        listar: 'GET /api/permissions',
+        usuarioPermissoes: 'GET /api/permissions/:userId/permissions',
+        adicionarPermissao: 'POST /api/permissions/:userId/permissions',
+        removerPermissao: 'DELETE /api/permissions/:userId/permissions/:permId',
+        criarPermissao: 'POST /api/permissions'
+      },
+      health: 'GET /health'
     }
   });
 });

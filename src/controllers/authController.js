@@ -11,13 +11,29 @@ if (!JWT_SECRET) {
 }
 const JWT_EXPIRES = '10h'; // 10 horas
 
+// Helper para retry em queries
+async function queryWithRetry(query, params, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await pool.query(query, params);
+    } catch (err) {
+      if ((err.code === 'EAI_AGAIN' || err.code === 'ECONNREFUSED') && attempt < maxRetries) {
+        console.log(`⏳ Tentativa ${attempt}/${maxRetries} falhou, aguardando...`);
+        await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
 async function login(req, res) {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Usuário e senha são obrigatórios' });
 
     const q = 'SELECT * FROM auth_users WHERE username = $1 AND active = true';
-    const { rows } = await pool.query(q, [username]);
+    const { rows } = await queryWithRetry(q, [username]);
     const user = rows[0];
     if (!user) return res.status(401).json({ error: 'Credenciais inválidas' });
 
@@ -27,13 +43,11 @@ async function login(req, res) {
     // Se o usuário já tem um token ativo, revoga ele primeiro
     if (user.active_jti) {
       const jtiExpiresAt = user.jti_expires_at || new Date(Date.now() + 10 * 3600 * 1000);
-      await pool.query(
+      await queryWithRetry(
         'INSERT INTO auth_token_blacklist (jti, expired_at) VALUES ($1, $2) ON CONFLICT (jti) DO NOTHING',
         [user.active_jti, jtiExpiresAt]
       );
-    }
-
-    // gerar novo jti
+    }    // gerar novo jti
     const jti = randomUUID();
     const jtiExpiresAt = new Date(Date.now() + 10 * 3600 * 1000); // 10 horas
 
