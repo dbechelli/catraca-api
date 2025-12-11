@@ -1,9 +1,11 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const multer = require('multer');
 const pool = require('./config/database');
 const registrosRoutes = require('./routes/registrosRoutes');
-   
+const authRoutes = require('./routes/authRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -14,6 +16,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
   origin: [
     "http://localhost:5173",
+    "http://localhost:3000",
     "https://catratafront.visualsoftia.cloud",
     "https://www.catratafront.visualsoftia.cloud"
   ],
@@ -62,8 +65,13 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Rotas principais
+// Rota de autenticação
+app.use('/api/auth', authRoutes);
 
+// Rotas administrativas
+app.use('/api/admin', adminRoutes);
+
+// Rotas principais
 app.use('/api/registros', registrosRoutes);
 
 // Error handling middleware

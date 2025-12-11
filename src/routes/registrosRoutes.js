@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const { validateToken } = require('../middleware/auth');
+const accessLogger = require('../middleware/accessLogger');
 const {
   uploadRegistros,
   uploadConsolidado,
@@ -10,6 +12,10 @@ const {
   deletarRegistros,
   conferenciaICMS
 } = require('../controllers/registrosControllerConsolidado');
+
+// Middleware para proteger todas as rotas
+router.use(validateToken);
+router.use(accessLogger());
 
 // Configuração do Multer para upload de arquivos
 const storage = multer.memoryStorage();
