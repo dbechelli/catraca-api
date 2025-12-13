@@ -14,15 +14,29 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: [
+// Configuração manual do CORS
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://catratafront.visualsoftia.cloud",
-    "https://www.catratafront.visualsoftia.cloud"
-  ],
-  credentials: true
-}));
+    "https://transleg.visualsoftia.cloud",
+    "https://www.transleg.visualsoftia.cloud"
+  ];
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 
 app.use(express.json());
