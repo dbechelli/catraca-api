@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const multer = require('multer');
 const pool = require('./config/database');
 const registrosRoutes = require('./routes/registrosRoutes');
+const financeiroRoutes = require('./routes/financeiroRoutes');
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const permissionsRoutes = require('./routes/permissionsRoutes');
@@ -78,6 +79,9 @@ app.get('/', (req, res) => {
         removerPermissao: 'DELETE /api/permissions/:userId/permissions/:permId',
         criarPermissao: 'POST /api/permissions'
       },
+      financeiro: {
+        fluxoDiario: 'GET /api/financeiro/fluxo-diario?data_inicial=YYYY-MM-DD&data_final=YYYY-MM-DD'
+      },
       health: 'GET /health'
     }
   });
@@ -111,6 +115,9 @@ app.use('/api/permissions', permissionsRoutes);
 
 // Rotas principais
 app.use('/api/registros', registrosRoutes);
+
+// Rotas financeiras
+app.use('/api/financeiro', financeiroRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
