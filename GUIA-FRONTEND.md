@@ -910,6 +910,73 @@ REACT_APP_API_URL=http://localhost:3000/api
 12. Interceptor detecta 401 e redireciona para /login
 ```
 
+
+---
+
+## 💰 Módulo Financeiro
+
+### Endpoint: Fluxo Diário
+Retorna os dados de Receitas e Despesas para um período específico.
+
+- **URL:** `/api/financeiro/fluxo-diario`
+- **Method:** `GET`
+- **Auth:** Required (Token JWT)
+- **Query Params:**
+  - `data_inicial` (YYYY-MM-DD)
+  - `data_final` (YYYY-MM-DD)
+
+### Exemplo de Resposta
+
+```json
+[
+  {
+    "data": "2024-01-19",
+    "tipo": "RECEITA",
+    "cod_sub_custo": "1",
+    "descricao": "Valor Mercadoria",
+    "valor": 1500.00
+  },
+  {
+    "data": "2024-01-19",
+    "tipo": "DESPESA",
+    "cod_sub_custo": "101",
+    "descricao": "Combustível | Posto X",
+    "valor": -200.00
+  }
+]
+```
+
+### Serviço Frontend (`src/services/financeiroService.js`)
+
+```javascript
+import api from './api'; // Sua instância do Axios
+
+const financeiroService = {
+  /**
+   * Obtém o fluxo diário (receitas e despesas)
+   * @param {string} dataInicial - YYYY-MM-DD
+   * @param {string} dataFinal - YYYY-MM-DD
+   * @returns {Promise<Array>}
+   */
+  async getFluxoDiario(dataInicial, dataFinal) {
+    try {
+      const response = await api.get('/financeiro/fluxo-diario', {
+        params: {
+          data_inicial: dataInicial,
+          data_final: dataFinal
+        }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar fluxo diário:', error);
+      throw error;
+    }
+  }
+};
+
+export default financeiroService;
+```
+
 ---
 
 ## ✅ Checklist de Implementação
