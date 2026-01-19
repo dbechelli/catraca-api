@@ -1,9 +1,10 @@
 // routes/adminRoutes.js
 const express = require('express');
 const router = express.Router();
-const { listUsers, createUser, updateUser, deleteUser } = require('../controllers/adminController');
+const { listUsers, createUser, updateUser, deleteUser, resetPassword } = require('../controllers/adminController');
 const { validateToken, requireRole } = require('../middleware/auth');
 const accessLogger = require('../middleware/accessLogger');
+
 
 // Middleware para proteger todas as rotas admin - somente superadmin
 router.use(validateToken);
@@ -18,6 +19,9 @@ router.post('/users', createUser);
 
 // PUT - Atualizar usuário
 router.put('/users/:id', updateUser);
+
+// POST - Resetar senha do usuário
+router.post('/users/:id/reset-password', resetPassword);
 
 // DELETE - Deletar usuário
 router.delete('/users/:id', deleteUser);

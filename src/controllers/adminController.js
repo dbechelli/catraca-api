@@ -140,4 +140,48 @@ async function deleteUser(req, res) {
   }
 }
 
-module.exports = { listUsers, createUser, updateUser, deleteUser };
+/**
+ * Resetar senha de usuário (somente para superadmin)
+ */
+async function resetPassword(req, res) {
+  try {
+    const { id } = req.params;
+    const { password } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+
+    if (!password) {
+      return res.status(400).json({ error: 'A nova senha é obrigatória' });
+    }
+
+    const bcrypt = require('bcrypt');
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const query = `
+      UPDATE auth_users 
+      SET password_hash = $1,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+      RETURNING id, username
+    `;
+
+    const { rows } = await pool.query(query, [passwordHash, id]);
+
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    res.json({
+      success: true,
+      user: rows[0],
+      message: 'Senha resetada com sucesso'
+    });
+  } catch (err) {
+    console.error('❌ Erro ao resetar senha:', err);
+    res.status(500).json({ error: 'Erro ao resetar senha' });
+  }
+}
+
+module.exports = { listUsers, createUser, updateUser, deleteUser, resetPassword };
