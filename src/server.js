@@ -22,7 +22,9 @@ app.use((req, res, next) => {
     "http://localhost:5173",
     "http://localhost:3000",
     "https://transleg.visualsoftia.cloud",
-    "https://www.transleg.visualsoftia.cloud"
+    "https://www.transleg.visualsoftia.cloud",
+    "https://saas.transleg.com.br",
+    "https://www.saas.transleg.com.br"
   ];
 
   if (allowedOrigins.includes(origin)) {
